@@ -5,8 +5,19 @@ import os
 
 raw_db_url = settings.DATABASE_URL or ""
 db_url = raw_db_url.strip().strip('"').strip("'")
-if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+# Normalize dialect prefix and dynamically select installed driver (psycopg v3 vs psycopg2)
+if db_url.startswith("postgres://") or (db_url.startswith("postgresql://") and not db_url.startswith("postgresql+")):
+    prefix = "postgres://" if db_url.startswith("postgres://") else "postgresql://"
+    try:
+        import psycopg
+        db_url = db_url.replace(prefix, "postgresql+psycopg://", 1)
+    except ImportError:
+        try:
+            import psycopg2
+            db_url = db_url.replace(prefix, "postgresql+psycopg2://", 1)
+        except ImportError:
+            db_url = db_url.replace(prefix, "postgresql://", 1)
 
 # Ensure cloud PostgreSQL connections enforce SSL mode (Render, Neon, AWS RDS, etc.)
 if any(k in db_url for k in ["neon.tech", "render.com", "amazonaws.com", "azure.com", "cloud"]) and "sslmode" not in db_url:
