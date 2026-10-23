@@ -185,6 +185,12 @@ from sqlalchemy import text
 
 def run_db_migrations():
     """Runs Alembic versioned migrations to ensure reproducible, version-controlled schema."""
+    # Ensure baseline tables exist from models before running incremental migrations
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"⚠️ [Database] Schema sync notice: {e}")
+
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     ini_path = os.path.join(base_dir, "alembic.ini")
     if os.path.exists(ini_path):
@@ -204,16 +210,16 @@ def run_db_migrations():
 async def lifespan(app: FastAPI):
     """Automatically build database schema and seed initial demo data on startup."""
     try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"Schema sync notice: {e}")
+
+    try:
         run_db_migrations()
     except Exception as e:
         if settings.ENVIRONMENT == "production":
             raise RuntimeError(f"FATAL: Migration failed during production startup: {e}")
         print(f"Migration notice: {e}")
-
-    try:
-        Base.metadata.create_all(bind=engine)
-    except Exception as e:
-        print(f"Schema sync notice: {e}")
 
     if settings.ENVIRONMENT != "production":
         try:

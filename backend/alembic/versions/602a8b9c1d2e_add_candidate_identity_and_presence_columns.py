@@ -20,26 +20,28 @@ def upgrade() -> None:
     inspector = sa.inspect(conn)
     
     # Check exam_credentials
-    cred_cols = [c['name'] for c in inspector.get_columns('exam_credentials')]
-    if 'candidate_id' not in cred_cols:
-        op.add_column('exam_credentials', sa.Column('candidate_id', sa.String(36), nullable=True))
-        try:
-            op.create_index('ix_exam_credentials_candidate_id', 'exam_credentials', ['candidate_id'])
-        except Exception:
-            pass
+    if inspector.has_table('exam_credentials'):
+        cred_cols = [c['name'] for c in inspector.get_columns('exam_credentials')]
+        if 'candidate_id' not in cred_cols:
+            op.add_column('exam_credentials', sa.Column('candidate_id', sa.String(36), nullable=True))
+            try:
+                op.create_index('ix_exam_credentials_candidate_id', 'exam_credentials', ['candidate_id'])
+            except Exception:
+                pass
 
     # Check exam_submissions
-    sub_cols = [c['name'] for c in inspector.get_columns('exam_submissions')]
-    if 'candidate_id' not in sub_cols:
-        op.add_column('exam_submissions', sa.Column('candidate_id', sa.String(36), nullable=True))
-        try:
-            op.create_index('ix_exam_submissions_candidate_id', 'exam_submissions', ['candidate_id'])
-        except Exception:
-            pass
-    if 'deadline_at' not in sub_cols:
-        op.add_column('exam_submissions', sa.Column('deadline_at', sa.DateTime(), nullable=True))
-    if 'last_seen_at' not in sub_cols:
-        op.add_column('exam_submissions', sa.Column('last_seen_at', sa.DateTime(), nullable=True))
+    if inspector.has_table('exam_submissions'):
+        sub_cols = [c['name'] for c in inspector.get_columns('exam_submissions')]
+        if 'candidate_id' not in sub_cols:
+            op.add_column('exam_submissions', sa.Column('candidate_id', sa.String(36), nullable=True))
+            try:
+                op.create_index('ix_exam_submissions_candidate_id', 'exam_submissions', ['candidate_id'])
+            except Exception:
+                pass
+        if 'deadline_at' not in sub_cols:
+            op.add_column('exam_submissions', sa.Column('deadline_at', sa.DateTime(), nullable=True))
+        if 'last_seen_at' not in sub_cols:
+            op.add_column('exam_submissions', sa.Column('last_seen_at', sa.DateTime(), nullable=True))
 
 def downgrade() -> None:
     pass

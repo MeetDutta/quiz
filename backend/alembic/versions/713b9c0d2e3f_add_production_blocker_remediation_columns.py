@@ -20,18 +20,20 @@ def upgrade() -> None:
     inspector = sa.inspect(conn)
     
     # Check exams table
-    exam_cols = [c['name'] for c in inspector.get_columns('exams')]
-    if 'access_mode' not in exam_cols:
-        op.add_column('exams', sa.Column('access_mode', sa.String(50), server_default='ENROLLED_ONLY', nullable=False))
+    if inspector.has_table('exams'):
+        exam_cols = [c['name'] for c in inspector.get_columns('exams')]
+        if 'access_mode' not in exam_cols:
+            op.add_column('exams', sa.Column('access_mode', sa.String(50), server_default='ENROLLED_ONLY', nullable=False))
 
     # Check exam_submissions table
-    sub_cols = [c['name'] for c in inspector.get_columns('exam_submissions')]
-    if 'answer_version' not in sub_cols:
-        op.add_column('exam_submissions', sa.Column('answer_version', sa.Integer(), server_default='0', nullable=False))
-    if 'grading_status' not in sub_cols:
-        op.add_column('exam_submissions', sa.Column('grading_status', sa.String(50), server_default='COMPLETED', nullable=False))
-    if 'questions_snapshot_json' not in sub_cols:
-        op.add_column('exam_submissions', sa.Column('questions_snapshot_json', sa.Text(), nullable=True))
+    if inspector.has_table('exam_submissions'):
+        sub_cols = [c['name'] for c in inspector.get_columns('exam_submissions')]
+        if 'answer_version' not in sub_cols:
+            op.add_column('exam_submissions', sa.Column('answer_version', sa.Integer(), server_default='0', nullable=False))
+        if 'grading_status' not in sub_cols:
+            op.add_column('exam_submissions', sa.Column('grading_status', sa.String(50), server_default='COMPLETED', nullable=False))
+        if 'questions_snapshot_json' not in sub_cols:
+            op.add_column('exam_submissions', sa.Column('questions_snapshot_json', sa.Text(), nullable=True))
 
 def downgrade() -> None:
     pass
